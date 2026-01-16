@@ -1,9 +1,2 @@
-export type Logger = {
-  info: (message: string) => void;
-  error: (message: string) => void;
-};
-
-export const createLogger = (): Logger => ({
-  info: () => undefined,
-  error: () => undefined,
-});
+export { createLogger } from './pino.logger';
+export type { CreateLoggerOptions } from './pino.logger';
