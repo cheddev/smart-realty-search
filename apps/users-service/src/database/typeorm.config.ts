@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import type { Logger } from 'pino';
 import { DataSource, type DataSourceOptions } from 'typeorm';
 import { getEnv } from '../config/env';
@@ -9,6 +10,7 @@ export const createTypeOrmOptions = (): DataSourceOptions => {
     type: 'postgres',
     url: env.DATABASE_URL,
     synchronize: false,
+    migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
   };
 };
 
