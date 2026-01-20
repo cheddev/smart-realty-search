@@ -1,6 +1,2 @@
-export type CorrelationContext = {
-  correlationId?: string;
-};
-
-export const getCorrelationId = (context: CorrelationContext) =>
-  context.correlationId;
+export { getCorrelationId, runWithCorrelationId } from './correlation-id';
+export { correlationMiddleware } from './correlation.middleware';
