@@ -65,6 +65,20 @@
       "options": {
         "passWithNoTests": true
       }
+    },
+    "migration:run": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "TS_NODE_PROJECT=apps/users-service/tsconfig.app.json node -r ts-node/register ./node_modules/typeorm/cli.js migration:run -d apps/users-service/src/database/data-source.ts",
+        "cwd": "."
+      }
+    },
+    "migration:revert": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "TS_NODE_PROJECT=apps/users-service/tsconfig.app.json node -r ts-node/register ./node_modules/typeorm/cli.js migration:revert -d apps/users-service/src/database/data-source.ts",
+        "cwd": "."
+      }
     }
   }
 }

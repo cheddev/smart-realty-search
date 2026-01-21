@@ -6,6 +6,7 @@ export class CreateUsers20260120120000 implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
     const tableName = 'users';
     const indexName = 'IDX_USERS_EMAIL';
+    await queryRunner.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
     const hasTable = await queryRunner.hasTable(tableName);
 
     if (!hasTable) {
