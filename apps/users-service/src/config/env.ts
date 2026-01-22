@@ -21,6 +21,7 @@ export const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(1),
   JWT_ACCESS_TTL: ttlSchema.default('15m'),
   JWT_REFRESH_TTL: ttlSchema.default('7d'),
+  REFRESH_TOKEN_SALT: z.string().min(1),
 });
 
 export const getEnv = () => createEnv(envSchema, process.env);
