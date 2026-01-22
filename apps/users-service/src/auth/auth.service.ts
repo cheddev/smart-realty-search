@@ -7,11 +7,15 @@ import { JwtService } from '@nestjs/jwt';
 import { createHash } from 'node:crypto';
 import * as bcrypt from 'bcrypt';
 import type { StringValue } from 'ms';
-import { UserRepository } from '../users/repositories/user.repository';
+import { DataSource, MoreThan } from 'typeorm';
 import { getEnv } from '../config/env';
+import { RefreshTokenEntity } from '../users/entities/refresh-token.entity';
+import { UserEntity } from '../users/entities/user.entity';
 import { RefreshTokenRepository } from '../users/repositories/refresh-token.repository';
+import { UserRepository } from '../users/repositories/user.repository';
 import { LoginDto } from './dto/login.dto';
 import { LogoutDto } from './dto/logout.dto';
+import { RefreshDto } from './dto/refresh.dto';
 import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
@@ -23,6 +27,7 @@ export class AuthService {
     private readonly usersRepository: UserRepository,
     private readonly jwtService: JwtService,
     private readonly refreshTokenRepository: RefreshTokenRepository,
+    private readonly dataSource: DataSource,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -77,6 +82,51 @@ export class AuthService {
     );
   }
 
+  async refresh(dto: RefreshDto) {
+    const payload = await this.jwtService.verifyAsync<{
+      sub: string;
+      type?: string;
+    }>(dto.refreshToken, {
+      secret: this.env.JWT_REFRESH_SECRET,
+    });
+
+    if (payload.type !== 'refresh') {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const tokenHash = this.hashRefreshToken(dto.refreshToken);
+
+    return this.dataSource.transaction(async (manager) => {
+      const refreshRepo = manager.getRepository(RefreshTokenEntity);
+      const userRepo = manager.getRepository(UserEntity);
+      const now = new Date();
+
+      const existing = await refreshRepo.findOne({
+        where: {
+          userId: payload.sub,
+          tokenHash,
+          revokedAt: null,
+          expiresAt: MoreThan(now),
+        },
+      });
+
+      if (!existing) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      const user = await userRepo.findOne({ where: { id: payload.sub } });
+
+      if (!user) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      existing.revokedAt = now;
+      await refreshRepo.save(existing);
+
+      return this.createTokensWithManager(user.id, user.email, manager);
+    });
+  }
+
   private async createTokens(userId: string, email: string) {
     const accessToken = await this.jwtService.signAsync(
       { sub: userId, email },
@@ -102,6 +152,40 @@ export class AuthService {
       tokenHash,
       expiresAt,
     );
+
+    return { accessToken, refreshToken };
+  }
+
+  private async createTokensWithManager(
+    userId: string,
+    email: string,
+    manager: DataSource['manager'],
+  ) {
+    const accessToken = await this.jwtService.signAsync(
+      { sub: userId, email },
+      {
+        secret: this.env.JWT_ACCESS_SECRET,
+        expiresIn: this.env.JWT_ACCESS_TTL,
+      },
+    );
+    const refreshToken = await this.jwtService.signAsync(
+      { sub: userId, type: 'refresh' },
+      {
+        secret: this.env.JWT_REFRESH_SECRET,
+        expiresIn: this.env.JWT_REFRESH_TTL,
+      },
+    );
+
+    const expiresAt = new Date(
+      Date.now() + this.getTtlMs(this.env.JWT_REFRESH_TTL),
+    );
+    const tokenHash = this.hashRefreshToken(refreshToken);
+
+    await manager.getRepository(RefreshTokenEntity).save({
+      userId,
+      tokenHash,
+      expiresAt,
+    });
 
     return { accessToken, refreshToken };
   }
