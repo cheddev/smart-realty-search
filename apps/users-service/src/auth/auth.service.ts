@@ -42,6 +42,9 @@ export class AuthService {
       dto.email,
       passwordHash,
     );
+    
+    //  После регистрации создается сессия, но все равно нужно сделать логин, который сгенерит еще одну сессию.
+    //  TODO: сделать либо регистрация === логин, либо регистрация не выдает токены.
 
     return this.createTokens(saved.id, saved.email);
   }
