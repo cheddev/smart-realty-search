@@ -1,10 +1,30 @@
+import { LoggerService } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import {
+  correlationMiddleware,
+  createLogger,
+} from '../../../libs/shared-utils/src';
+import { getEnv } from './config/env';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const env = getEnv();
+  const logger = createLogger({
+    serviceName: 'gateway',
+    level: env.LOG_LEVEL,
+    pretty: env.NODE_ENV !== 'production',
+  });
+  const nestLogger: LoggerService = {
+    log: (message) => logger.info(message),
+    error: (message, trace) => logger.error({ trace }, message),
+    warn: (message) => logger.warn(message),
+    debug: (message) => logger.debug(message),
+    verbose: (message) => logger.trace(message),
+  };
 
-  const port = process.env.PORT ? Number(process.env.PORT) : 3000;
-  await app.listen(port);
+  const app = await NestFactory.create(AppModule, { logger: nestLogger });
+  app.use(correlationMiddleware);
+
+  await app.listen(env.PORT);
 }
 bootstrap();
