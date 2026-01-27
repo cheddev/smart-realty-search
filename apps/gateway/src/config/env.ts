@@ -8,6 +8,9 @@ export const envSchema = z.object({
     .enum(['silent', 'fatal', 'error', 'warn', 'info', 'debug', 'trace'])
     .default('info'),
   USERS_SERVICE_URL: z.string().min(1),
+  JWT_ACCESS_SECRET: z.string().min(1),
+  JWT_ISSUER: z.string().min(1).optional(),
+  JWT_AUDIENCE: z.string().min(1).optional(),
 });
 
 export const getEnv = () => createEnv(envSchema, process.env);
