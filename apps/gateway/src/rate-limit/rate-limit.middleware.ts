@@ -52,7 +52,7 @@ const getRedisClient = async () => {
 
   connecting = withTimeout(nextClient.connect(), connectTimeoutMs)
     .then(() => {
-      client = nextClient;
+      client = nextClient as RedisClientType;
       return client;
     })
     .catch((error) => {
