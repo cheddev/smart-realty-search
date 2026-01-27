@@ -8,6 +8,9 @@ export const envSchema = z.object({
     .enum(['silent', 'fatal', 'error', 'warn', 'info', 'debug', 'trace'])
     .default('info'),
   USERS_SERVICE_URL: z.string().min(1),
+  REDIS_URL: z.string().min(1),
+  RATE_LIMIT_WINDOW_SEC: z.coerce.number().int().positive().optional().default(60),
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().optional().default(60),
   JWT_ACCESS_SECRET: z.string().min(1),
   JWT_ISSUER: z.string().min(1).optional(),
   JWT_AUDIENCE: z.string().min(1).optional(),

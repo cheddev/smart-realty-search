@@ -6,6 +6,7 @@ import {
 } from '../../../libs/shared-utils/src';
 import { getEnv } from './config/env';
 import { AppModule } from './app/app.module';
+import { rateLimitMiddleware } from './rate-limit/rate-limit.middleware';
 
 async function bootstrap() {
   const env = getEnv();
@@ -24,6 +25,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule, { logger: nestLogger });
   app.use(correlationMiddleware);
+  app.use('/api', rateLimitMiddleware);
 
   await app.listen(env.PORT);
 }
