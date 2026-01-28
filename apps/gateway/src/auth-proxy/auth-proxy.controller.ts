@@ -1,7 +1,7 @@
 import { BadGatewayException, Body, Controller, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { getEnv } from '../config/env';
-import { postRaw } from '../http/http.client';
+import { BulkheadRejectedError, postRaw } from '../http/http.client';
 
 @Controller('api/auth')
 export class AuthProxyController {
@@ -55,6 +55,10 @@ export class AuthProxyController {
 
       return res.send(response.body);
     } catch (error) {
+      if (error instanceof BulkheadRejectedError) {
+        return res.status(503).send({ code: error.code });
+      }
+
       throw new BadGatewayException('Users service unavailable');
     }
   }
